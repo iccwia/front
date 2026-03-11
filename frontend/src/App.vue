@@ -4,26 +4,32 @@
     <div
       class="w-full max-w-3xl bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm z-10"
     >
-      <div class="flex items-center gap-4">
-        <h1 class="font-bold text-gray-800 text-lg">🎓 智能助教</h1>
-        <!-- 🔴 改进：使用 v-for 循环渲染题目列表 -->
+      <div class="flex items-center gap-4 flex-1 overflow-hidden">
+        <h1 class="font-bold text-gray-800 text-lg shrink-0">🎓 智能助教</h1>
+
+        <!-- 🔴 改进：限制 max-w-xs，添加 truncate 显示省略号，并增加 title 属性展示完整题目 -->
         <select
           v-model="selectedQuestionId"
           @change="init"
-          class="text-xs border rounded p-1 outline-none"
+          class="text-xs border rounded p-1 outline-none max-w-[200px] truncate"
+          :title="
+            problemList.find((p) => p.problemId === selectedQuestionId)?.title
+          "
         >
           <option
             v-for="item in problemList"
             :key="item.problemId"
             :value="item.problemId"
+            :title="item.title"
           >
             题目 {{ item.problemId }}: {{ item.title }}
           </option>
         </select>
       </div>
-      <div class="flex items-center gap-2">
+
+      <div class="flex items-center gap-2 ml-4">
         <span
-          class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full"
+          class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shrink-0"
           >Step {{ currentStep }}</span
         >
       </div>
