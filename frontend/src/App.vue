@@ -6,13 +6,19 @@
     >
       <div class="flex items-center gap-4">
         <h1 class="font-bold text-gray-800 text-lg">🎓 智能助教</h1>
+        <!-- 🔴 改进：使用 v-for 循环渲染题目列表 -->
         <select
           v-model="selectedQuestionId"
           @change="init"
           class="text-xs border rounded p-1 outline-none"
         >
-          <option :value="1">题目 1: Pascal 定点小数</option>
-          <option :value="2">题目 2: a 后跟两个 b</option>
+          <option
+            v-for="item in problemList"
+            :key="item.problemId"
+            :value="item.problemId"
+          >
+            题目 {{ item.problemId }}: {{ item.title }}
+          </option>
         </select>
       </div>
       <div class="flex items-center gap-2">
@@ -108,37 +114,32 @@ const loading = ref(false);
 const chatRef = ref(null);
 const userId = "user_001";
 const selectedQuestionId = ref(1);
+// 🔴 新增：存储题目列表
+const problemList = ref([]);
 
 const renderer = new marked.Renderer();
 
 /**
- * 🟢 修复 undefined 的关键逻辑
- * 兼容处理 marked 各种版本的参数传递
+ * 🟢 兼容各版本 marked 的参数传递
  */
 renderer.link = function (hrefOrObj, title, text) {
   let finalHref, finalTitle, finalText;
-
-  // 如果第一个参数是对象 (marked v7.0+)
   if (typeof hrefOrObj === "object" && hrefOrObj !== null) {
     finalHref = hrefOrObj.href;
     finalTitle = hrefOrObj.title;
     finalText = hrefOrObj.text;
   } else {
-    // 传统参数传递 (marked v4.0-)
     finalHref = hrefOrObj;
     finalTitle = title;
     finalText = text;
   }
-
-  // 兜底处理：如果 text 依然为空，显示链接本身
   if (!finalText || finalText === "undefined") finalText = "查看链接";
 
-  return `<a href="${finalHref}" target="_blank" class="inline-block mt-1 px-3 py-1 bg-white border border-blue-400 text-blue-600 rounded-md no-underline font-bold hover:bg-blue-50 transition">${finalText}</a>`;
+  return `<a href="${finalHref}" target="_blank" class="inline-block mt-1 mb-1 px-3 py-1 bg-white border border-blue-400 text-blue-600 rounded-md no-underline font-bold hover:bg-blue-50 transition">${finalText}</a>`;
 };
 
 renderer.image = function (hrefOrObj, title, text) {
   let finalHref, finalAlt;
-
   if (typeof hrefOrObj === "object" && hrefOrObj !== null) {
     finalHref = hrefOrObj.href;
     finalAlt = hrefOrObj.text;
@@ -146,8 +147,20 @@ renderer.image = function (hrefOrObj, title, text) {
     finalHref = hrefOrObj;
     finalAlt = text;
   }
-
   return `<div class="image-box"><img src="${finalHref}" alt="${finalAlt}" style="width: 100%; height: auto; display: block; border-radius: 8px; margin: 10px 0;" /></div>`;
+};
+
+// 🔴 新增：获取所有题目
+const fetchProblems = async () => {
+  try {
+    const res = await axios.get("http://localhost:3000/api/problems");
+    problemList.value = res.data;
+    if (problemList.value.length > 0) {
+      selectedQuestionId.value = problemList.value[0].problemId;
+    }
+  } catch (e) {
+    console.error("获取题目列表失败:", e);
+  }
 };
 
 const init = async () => {
@@ -194,8 +207,14 @@ const scrollToBottom = () => {
     if (chatRef.value) chatRef.value.scrollTop = chatRef.value.scrollHeight;
   });
 };
+
 const renderText = (t) => marked.parse(t || "", { renderer: renderer });
-onMounted(init);
+
+// 🔴 修改：页面挂载先获取题目，再初始化聊天
+onMounted(async () => {
+  await fetchProblems();
+  init();
+});
 </script>
 
 <style scoped>
